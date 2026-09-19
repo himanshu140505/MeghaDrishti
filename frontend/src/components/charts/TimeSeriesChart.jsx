@@ -1,19 +1,16 @@
+import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useTheme } from '../../context/ThemeContext';
 
-const generateTimeSeries = () => {
-  const data = [];
-  for (let i = 1; i <= 7; i++) {
-    const base = 20 + Math.sin(i * 0.8) * 15;
-    data.push({
-      day: `Sep ${i}`,
-      Observed: Math.round((base + Math.random() * 8) * 10) / 10,
-      'Raw NWP': Math.round((base * 1.2 + Math.random() * 12) * 10) / 10,
-      'AI Corrected': Math.round((base * 1.05 + Math.random() * 6) * 10) / 10,
-    });
-  }
-  return data;
-};
+const DAY_OFFSETS = [
+  { observed: -2.1, raw: 3.4, ai: -0.5 },
+  { observed: 0.8, raw: -1.2, ai: 0.3 },
+  { observed: 3.5, raw: 5.1, ai: 1.8 },
+  { observed: -1.4, raw: 2.8, ai: -0.2 },
+  { observed: 2.2, raw: -3.6, ai: 0.9 },
+  { observed: -0.7, raw: 1.5, ai: 0.1 },
+  { observed: 1.6, raw: -2.4, ai: -0.3 },
+];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -38,7 +35,26 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function TimeSeriesChart({ districts = [] }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const data = generateTimeSeries();
+
+  const data = useMemo(() => {
+    if (!districts.length) return [];
+
+    const avgRaw = districts.reduce((sum, d) => sum + (d.raw ?? 0), 0) / districts.length;
+    const avgCorrected = districts.reduce((sum, d) => sum + (d.corrected ?? 0), 0) / districts.length;
+
+    return DAY_OFFSETS.map((offset, i) => {
+      const observed = Math.round((avgCorrected + offset.observed) * 10) / 10;
+      const raw = Math.round((avgRaw + offset.raw) * 10) / 10;
+      const ai = Math.round((avgCorrected + offset.ai) * 10) / 10;
+
+      return {
+        day: `Sep ${i + 1}`,
+        Observed: Math.max(0, observed),
+        'Raw NWP': Math.max(0, raw),
+        'AI Corrected': Math.max(0, ai),
+      };
+    });
+  }, [districts]);
 
   return (
     <div className={`${isDark ? 'bg-slate-800/50 border-slate-700/30' : 'bg-white border-gray-200'} rounded-2xl border p-5`}>

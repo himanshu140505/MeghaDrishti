@@ -7,7 +7,18 @@ function makeAlertKey(type, district) {
   return `${type}:${district || 'global'}`;
 }
 
+// Prune entries older than 10 minutes every 100 calls
+let pruneCounter = 0;
+function maybePrune() {
+  if (++pruneCounter % 100 !== 0) return;
+  const now = Date.now();
+  for (const [key, ts] of recentAlerts) {
+    if (now - ts > 10 * 60 * 1000) recentAlerts.delete(key);
+  }
+}
+
 function isCooldown(key) {
+  maybePrune();
   const last = recentAlerts.get(key);
   if (last && Date.now() - last < ALERT_COOLDOWN) return true;
   recentAlerts.set(key, Date.now());

@@ -1,4 +1,4 @@
-import { Home, Cloud, CloudRain, AlertTriangle, MapPin, BarChart3, Settings } from 'lucide-react';
+import { Home, Cloud, CloudRain, AlertTriangle, MapPin, BarChart3, Settings, Bug, Cpu, Code2, Bell } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function Sidebar({ activeView, setActiveView }) {
@@ -12,6 +12,10 @@ export default function Sidebar({ activeView, setActiveView }) {
     { id: 'probability', label: 'Heavy Rain Probability', icon: AlertTriangle },
     { id: 'district', label: 'District Forecast', icon: MapPin },
     { id: 'verification', label: 'Verification Report', icon: BarChart3 },
+    { id: 'alerts', label: 'Alerts', icon: Bell },
+    { id: 'issues', label: 'Known Issues', icon: Bug },
+    { id: 'models', label: 'Model Registry', icon: Cpu },
+    { id: 'api', label: 'API Reference', icon: Code2 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -37,9 +41,7 @@ export default function Sidebar({ activeView, setActiveView }) {
               }`}
             >
               <item.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200 ${
-                isActive
-                  ? isDark ? 'text-cyan-400' : 'text-cyan-600'
-                  : isDark ? 'text-slate-500' : 'text-gray-400'
+                isActive ? isDark ? 'text-cyan-400' : 'text-cyan-600' : isDark ? 'text-slate-500' : 'text-gray-400'
               }`} />
               <span className="text-[13px]">{item.label}</span>
             </button>

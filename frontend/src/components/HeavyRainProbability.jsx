@@ -20,14 +20,15 @@ export default function HeavyRainProbability({ districts = [] }) {
     );
   }
 
+  const avgModerate = districts.reduce((s, d) => s + (d.p_moderate || d.pModerate || 0), 0) / districts.length;
   const avgHeavy = districts.reduce((s, d) => s + (d.p_heavy || d.pHeavy || 0), 0) / districts.length;
   const avgVeryHeavy = districts.reduce((s, d) => s + (d.p_very_heavy || d.pVeryHeavy || 0), 0) / districts.length;
   const avgExtreme = districts.reduce((s, d) => s + (d.p_extreme || d.pExtreme || 0), 0) / districts.length;
 
   const categories = [
-    { label: '> 64.5 mm (Heavy)', value: (avgHeavy * 100).toFixed(0), bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/20', glow: 'hover:shadow-emerald-500/10' },
-    { label: '> 115.6 mm (Very Heavy)', value: (avgVeryHeavy * 100).toFixed(0), bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/20', glow: 'hover:shadow-amber-500/10' },
-    { label: '> 204.5 mm (Ext. Heavy)', value: (avgExtreme * 100).toFixed(0), bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/20', glow: 'hover:shadow-purple-500/10' },
+    { label: '>= 64.5 mm (Heavy)', value: avgHeavy, bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/20', glow: 'hover:shadow-emerald-500/10' },
+    { label: '>= 124.5 mm (Very Heavy)', value: avgVeryHeavy, bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/20', glow: 'hover:shadow-amber-500/10' },
+    { label: '>= 244.5 mm (Extreme)', value: avgExtreme, bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/20', glow: 'hover:shadow-purple-500/10' },
   ];
 
   return (

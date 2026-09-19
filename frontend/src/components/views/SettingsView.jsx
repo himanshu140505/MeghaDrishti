@@ -1,5 +1,6 @@
 import { useTheme } from '../../context/ThemeContext';
 import { Sun, Moon, Server, Cpu, Database } from 'lucide-react';
+import { MODEL_CARDS } from '../../data/mockData';
 
 export default function SettingsView() {
   const { theme, toggleTheme } = useTheme();
@@ -31,7 +32,7 @@ export default function SettingsView() {
               <Server className="w-5 h-5 text-emerald-400" />
               <div>
                 <div className={`text-[14px] font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Backend API</div>
-                <div className={`text-[12px] ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>http://localhost:8000/api/v1</div>
+                <div className={`text-[12px] ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/v1'}</div>
               </div>
             </div>
             <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[11px] font-semibold">Connected</span>
@@ -43,10 +44,10 @@ export default function SettingsView() {
               <div className={`text-[14px] font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>ML Models</div>
             </div>
             <div className="space-y-2">
-              {['Regime Classifier (Random Forest)', 'Bias Corrector (GradientBoosting)', 'Probability Estimator (GradientBoosting)'].map(m => (
-                <div key={m} className="flex items-center gap-2">
+              {MODEL_CARDS.map(m => (
+                <div key={m.key} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className={`text-[12px] ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>{m}</span>
+                  <span className={`text-[12px] ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>{m.name} ({m.algo.split('(')[0].trim()})</span>
                 </div>
               ))}
             </div>

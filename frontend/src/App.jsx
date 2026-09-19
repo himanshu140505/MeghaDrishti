@@ -10,6 +10,10 @@ import RainfallForecastView from './components/views/RainfallForecastView';
 import HeavyRainView from './components/views/HeavyRainView';
 import DistrictForecastView from './components/views/DistrictForecastView';
 import VerificationView from './components/views/VerificationView';
+import AlertsView from './components/views/AlertsView';
+import KnownIssuesView from './components/views/KnownIssuesView';
+import ModelRegistryView from './components/views/ModelRegistryView';
+import ApiReferenceView from './components/views/ApiReferenceView';
 import SettingsView from './components/views/SettingsView';
 import DistrictDetailModal from './components/common/DistrictDetailModal';
 import NotificationContainer from './components/common/NotificationContainer';
@@ -105,6 +109,10 @@ export default function App() {
           {activeView === 'probability' && <HeavyRainView {...viewProps} />}
           {activeView === 'district' && <DistrictForecastView {...viewProps} />}
           {activeView === 'verification' && <VerificationView {...viewProps} />}
+          {activeView === 'alerts' && <AlertsView districts={districts} />}
+          {activeView === 'issues' && <KnownIssuesView />}
+          {activeView === 'models' && <ModelRegistryView />}
+          {activeView === 'api' && <ApiReferenceView />}
           {activeView === 'settings' && <SettingsView />}
         </main>
       </div>

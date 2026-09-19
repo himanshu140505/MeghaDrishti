@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 const PAGE_SIZE = 40;
 
-export default function DistrictTable({ districts = [], onDistrictClick }) {
+export default function DistrictTable({ districts = [], onDistrictClick, hoveredDistrict, onRowHover }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [search, setSearch] = useState('');
@@ -41,8 +41,10 @@ export default function DistrictTable({ districts = [], onDistrictClick }) {
     western_disturbance: 'bg-indigo-400',
   };
 
+  const headers = ['District', 'State', 'Regime', 'Raw (mm)', 'Corrected (mm)', 'P(>7.5mm)', 'P(>64.5mm)', 'P(wet)'];
+
   return (
-    <div className={`glass-card flex flex-col overflow-hidden`}>
+    <div className={`glass-card flex flex-col overflow-hidden h-full`}>
       <div className={`px-2.5 py-1.5 border-b flex items-center gap-1.5 ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
         <Search className={`w-3 h-3 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
         <input
@@ -50,7 +52,7 @@ export default function DistrictTable({ districts = [], onDistrictClick }) {
           placeholder={`Search ${districts.length} districts...`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className={`flex-1 bg-transparent text-[11px] outline-none placeholder:${isDark ? 'text-slate-600' : 'text-gray-300'} ${isDark ? 'text-white' : 'text-gray-900'}`}
+          className={`flex-1 bg-transparent text-[11px] outline-none ${isDark ? 'text-white placeholder:text-slate-600' : 'text-gray-900 placeholder:text-gray-300'}`}
         />
         {search && (
           <button onClick={() => setSearch('')} className={`flex-shrink-0 ${isDark ? 'text-slate-500 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
@@ -62,33 +64,57 @@ export default function DistrictTable({ districts = [], onDistrictClick }) {
         </span>
       </div>
 
-      <div ref={scrollRef} onScroll={handleScroll} className="overflow-auto h-full max-h-[520px]">
+      <div ref={scrollRef} onScroll={handleScroll} className="overflow-auto flex-1">
         <table className="w-full">
+          <thead>
+            <tr className={`border-b ${isDark ? 'border-white/5' : 'border-gray-100'} sticky top-0 ${isDark ? 'bg-[#0f172a]/95' : 'bg-white/95'} backdrop-blur-sm z-10`}>
+              {headers.map(h => (
+                <th key={h} className={`text-left text-[10px] font-semibold uppercase tracking-wider px-3 py-2 ${isDark ? 'text-slate-400' : 'text-gray-500'} whitespace-nowrap`}>{h}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody>
             {visible.map((d, i) => {
               const dot = regimeDot[d.regime] || 'bg-slate-400';
               const pHeavy = d.p_heavy || d.pHeavy || 0;
+              const pModerate = d.p_moderate || d.pModerate || 0;
+              const wetProb = d.wet || 0;
+              const isHovered = hoveredDistrict === (d.district_id || d.id);
               return (
                 <tr
                   key={d.district_id || d.id || i}
                   onClick={() => onDistrictClick?.(d)}
-                  className={`border-b cursor-pointer transition-colors flex items-center gap-2 px-2.5 py-1 ${
-                    isDark ? 'border-white/5 hover:bg-white/[0.03]' : 'border-gray-50 hover:bg-cyan-50/50'
+                  onMouseEnter={() => onRowHover?.(d.district_id || d.id)}
+                  onMouseLeave={() => onRowHover?.(null)}
+                  className={`border-b cursor-pointer transition-colors ${
+                    isHovered
+                      ? isDark ? 'bg-cyan-500/10' : 'bg-cyan-50'
+                      : isDark ? 'border-white/5 hover:bg-white/[0.03]' : 'border-gray-50 hover:bg-gray-50'
                   }`}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
-                  <span className={`text-[11px] font-medium truncate min-w-0 flex-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {d.name}
-                  </span>
-                  <span className={`text-[10px] tabular-nums ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                    {d.raw}
-                  </span>
-                  <span className={`text-[10px] font-bold tabular-nums ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                    {d.corrected}
-                  </span>
-                  <span className={`text-[10px] font-bold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {(pHeavy * 100).toFixed(0)}%
-                  </span>
+                  <td className={`px-3 py-2 text-[11px] font-semibold ${isDark ? 'text-white' : 'text-gray-900'} whitespace-nowrap`}>{d.name}</td>
+                  <td className={`px-3 py-2 text-[10px] ${isDark ? 'text-slate-400' : 'text-gray-500'} whitespace-nowrap`}>{d.state}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+                      <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{d.regime?.replace(/_/g, ' ')}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-right">
+                    <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{d.raw}</span>
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-right font-bold">
+                    <span className={`${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{d.corrected}</span>
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-right">
+                    <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{(pModerate * 100).toFixed(0)}%</span>
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-right">
+                    <span className={`${pHeavy > 0.2 ? 'text-orange-400 font-bold' : isDark ? 'text-slate-400' : 'text-gray-500'}`}>{(pHeavy * 100).toFixed(0)}%</span>
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-right">
+                    <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{(wetProb * 100).toFixed(0)}%</span>
+                  </td>
                 </tr>
               );
             })}
@@ -100,9 +126,7 @@ export default function DistrictTable({ districts = [], onDistrictClick }) {
           </div>
         )}
         {filtered.length === 0 && (
-          <div className={`px-2 py-4 text-center text-[10px] ${isDark ? 'text-slate-600' : 'text-gray-400'}`}>
-            No matches
-          </div>
+          <div className={`px-2 py-4 text-center text-[10px] ${isDark ? 'text-slate-600' : 'text-gray-400'}`}>No matches</div>
         )}
       </div>
     </div>
