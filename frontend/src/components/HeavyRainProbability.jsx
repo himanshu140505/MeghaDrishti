@@ -44,7 +44,7 @@ export default function HeavyRainProbability({ districts = [] }) {
             </div>
             <div>
               <div className={`text-[12px] font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{c.label}</div>
-              <div className={`text-[28px] font-extrabold tracking-[-0.03em] ${c.text}`}>{c.value}%</div>
+              <div className={`text-[28px] font-extrabold tracking-[-0.03em] ${c.text}`}>{(c.value * 100).toFixed(0)}%</div>
             </div>
           </div>
         ))}
