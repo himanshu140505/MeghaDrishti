@@ -552,6 +552,7 @@ class RealDataLoader:
             399, 564, 769, 612, 338, 702, 538, 328, 748, 281,
             147, 560, 236, 447, 460, 408, 401, 172, 289, 728,
             746, 752, 750, 755, 712, 729, 703, 665, 762, 104,
+            69, 98, 112, 495, 472, 397, 566, 330, 318, 765, 777,
         }
         nwd = [d for d in districts if d["district_id"] in _test_ids]
         bulk = fetch_open_meteo_bulk(nwd, date_str)
