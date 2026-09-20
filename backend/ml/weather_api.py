@@ -10,18 +10,116 @@ ALL_HOURLY = ",".join([
     "temperature_2m", "precipitation", "cape",
     "wind_speed_10m", "wind_direction_10m",
     "surface_pressure", "cloud_cover",
-    "temperature_700hPa", "relative_humidity_700hPa",
-    "wind_speed_700hPa", "wind_direction_700hPa",
-    "wind_speed_200hPa", "wind_direction_200hPa",
 ])
 
 MONSOON_PHASES = {6: 1, 7: 2, 8: 2, 9: 3}
 PEAK_MONSOON_MONTHS = {7, 8}
 
+_bulk_cache = {}
+
 
 def _safe_mean(values):
     clean = [v for v in values if v is not None]
     return float(np.mean(clean)) if clean else None
+
+
+def _build_date_params(date):
+    from datetime import date as _date
+    req = datetime.strptime(date[:10], "%Y-%m-%d").date()
+    days_ago = (_date.today() - req).days
+    if days_ago < 0:
+        return {"start_date": date, "end_date": date}, days_ago
+    elif days_ago == 0:
+        return {"start_date": date, "end_date": date}, days_ago
+    elif 0 < days_ago <= 85:
+        return {"past_days": days_ago + 7}, days_ago
+    else:
+        return None, days_ago
+
+
+def _slice_date_from_bulk(hourly_data, date, days_ago):
+    if days_ago <= 0:
+        return hourly_data
+    times = hourly_data.get("time", [])
+    keep = [i for i, t in enumerate(times) if t[:10] == date[:10]]
+    if not keep:
+        return None
+    out = {"time": [times[i] for i in keep]}
+    for key, vals in hourly_data.items():
+        if key == "time":
+            continue
+        if isinstance(vals, list) and len(vals) == len(times):
+            out[key] = [vals[i] for i in keep]
+    return out
+
+
+def _fetch_chunk(chunk, date, date_params, days_ago):
+    lats = ",".join(str(d["centroid_lat"]) for d in chunk)
+    lons = ",".join(str(d["centroid_lon"]) for d in chunk)
+    params = {
+        "latitude": lats, "longitude": lons,
+        "hourly": ALL_HOURLY, "timezone": "Asia/Kolkata",
+        **date_params,
+    }
+    try:
+        resp = requests.get(OPEN_METEO_FORECAST, params=params, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception:
+        return {}
+
+    if isinstance(data, dict) and data.get("error"):
+        return {}
+
+    results = {}
+    if isinstance(data, list):
+        for i, loc_data in enumerate(data):
+            if i >= len(chunk):
+                break
+            hourly = loc_data.get("hourly") if isinstance(loc_data, dict) else None
+            if hourly and days_ago > 0:
+                hourly = _slice_date_from_bulk(hourly, date, days_ago)
+            if hourly:
+                results[chunk[i]["district_id"]] = {"hourly": hourly}
+    elif isinstance(data, dict) and "hourly" in data:
+        hourly = data["hourly"]
+        if hourly and days_ago > 0:
+            hourly = _slice_date_from_bulk(hourly, date, days_ago)
+        if hourly:
+            for d in chunk:
+                results[d["district_id"]] = {"hourly": hourly}
+    return results
+
+
+def fetch_open_meteo_bulk(districts, date):
+    cache_key = (tuple(d["district_id"] for d in districts), date)
+    if cache_key in _bulk_cache:
+        return _bulk_cache[cache_key]
+
+    date_params, days_ago = _build_date_params(date)
+    if date_params is None:
+        return {}
+
+    all_results = {}
+    chunk_size = 50
+    chunks = [districts[i:i + chunk_size] for i in range(0, len(districts), chunk_size)]
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {}
+        for i, chunk in enumerate(chunks):
+            if i > 0:
+                time.sleep(0.3)
+            futures[pool.submit(_fetch_chunk, chunk, date, date_params, days_ago)] = chunk
+
+        for f in as_completed(futures):
+            try:
+                r = f.result()
+                all_results.update(r)
+            except Exception:
+                pass
+
+    _bulk_cache[cache_key] = all_results
+    return all_results
 
 
 def fetch_open_meteo(lat, lon, date):
@@ -35,14 +133,12 @@ def fetch_open_meteo(lat, lon, date):
         req = datetime.strptime(date[:10], "%Y-%m-%d").date()
         days_ago = (_date.today() - req).days
         if days_ago < 0:
-            # future date -> use standard forecast range
             params["start_date"] = date
             params["end_date"] = date
         elif days_ago == 0:
             params["start_date"] = date
             params["end_date"] = date
         elif 0 < days_ago <= 85:
-            # past within past_days window: past_days is exclusive with start/end dates
             params["past_days"] = days_ago + 7
         else:
             return None
@@ -54,7 +150,6 @@ def fetch_open_meteo(lat, lon, date):
             return None
 
         if days_ago > 0:
-            # Roll the hourly series back to just the requested date.
             hours = data["hourly"]
             times = hours.get("time", [])
             keep = [i for i, t in enumerate(times) if t[:10] == date[:10]]
@@ -73,7 +168,6 @@ def fetch_open_meteo(lat, lon, date):
 
 
 def compute_ml_features_v2(data, lat=0, lon=0, date_str=None):
-    """V2 features: no circular deps, temporal+spatial."""
     if not data or "hourly" not in data:
         return None, None
 
@@ -151,24 +245,26 @@ def fetch_district_weather(district, date):
 
 
 def fetch_all_districts_weather(districts, date, max_workers=8):
+    bulk_results = fetch_open_meteo_bulk(districts, date)
     results = {}
-    batch_size = 40
 
-    for i in range(0, len(districts), batch_size):
-        batch = districts[i:i + batch_size]
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futures = {pool.submit(fetch_district_weather, d, date): d["district_id"] for d in batch}
-            for f in as_completed(futures):
-                did = futures[f]
-                try:
-                    result = f.result()
-                    if result:
-                        results[did] = result
-                except Exception:
-                    pass
-
-        if i + batch_size < len(districts):
-            time.sleep(0.3)
+    for d in districts:
+        did = d["district_id"]
+        if did in bulk_results:
+            ml, raw = compute_ml_features_v2(
+                bulk_results[did],
+                lat=d["centroid_lat"],
+                lon=d["centroid_lon"],
+                date_str=date,
+            )
+            if ml:
+                results[did] = {
+                    "district_id": did,
+                    "lat": d["centroid_lat"],
+                    "lon": d["centroid_lon"],
+                    "ml_features": ml,
+                    "raw_weather": raw,
+                }
 
     return results
 

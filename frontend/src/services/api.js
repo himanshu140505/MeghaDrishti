@@ -13,15 +13,15 @@ export const fetchVerificationReport = async (date, leadTime = 24) => {
   return data;
 };
 
-export const fetchDistricts = async (date) => {
+export const fetchDistricts = async (date, leadTime = 24) => {
   const d = date || new Date().toISOString().split('T')[0];
-  const { data } = await api.get('/forecast/table/' + d, { params: { lead_time: 24 } });
+  const { data } = await api.get('/forecast/table/' + d, { params: { lead_time: leadTime } });
   return data;
 };
 
-export const fetchDistrictSearch = async (query, date) => {
+export const fetchDistrictSearch = async (query, date, leadTime = 24) => {
   const d = date || new Date().toISOString().split('T')[0];
-  const { data } = await api.get('/forecast/table/' + d, { params: { lead_time: 24 } });
+  const { data } = await api.get('/forecast/table/' + d, { params: { lead_time: leadTime } });
   const districts = data.districts || [];
   const ql = query.toLowerCase();
   return {

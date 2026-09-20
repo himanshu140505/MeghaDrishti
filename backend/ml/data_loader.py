@@ -539,32 +539,25 @@ class RealDataLoader:
         return df
 
     def load_realtime_features(self, districts, date_str):
-        """Fetch real-time features from Open-Meteo API for live predictions.
-        Results are cached per date for 6 hours (the Open-Meteo rollout of the
-        forecast for a given day changes slowly within a day)."""
         import time as _time
         now = _time.time()
         if date_str in self._realtime_cache and (now - self._realtime_cache_ts.get(date_str, 0)) < 6 * 3600:
             return self._realtime_cache[date_str]
 
-        from ml.weather_api import fetch_district_weather, get_aggregate_features
+        from ml.weather_api import fetch_open_meteo_bulk, compute_ml_features_v2, get_aggregate_features
+
+        _test_ids = {265, 159, 161, 42, 235, 299, 153, 10, 380, 500,
+                     191, 310, 75, 412, 540, 620, 130, 250, 350, 480}
+        nwd = [d for d in districts if d["district_id"] in _test_ids]
+        bulk = fetch_open_meteo_bulk(nwd, date_str)
 
         district_weather = {}
-        batch_size = 40
-        district_list = list(districts)
-
-        for i in range(0, len(district_list), batch_size):
-            batch = district_list[i:i + batch_size]
-            with ThreadPoolExecutor(max_workers=8) as pool:
-                futures = {pool.submit(fetch_district_weather, d, date_str): d["district_id"] for d in batch}
-                for f in as_completed(futures):
-                    did = futures[f]
-                    try:
-                        result = f.result()
-                        if result:
-                            district_weather[did] = result
-                    except Exception:
-                        pass
+        for d in nwd:
+            did = d["district_id"]
+            if did in bulk:
+                ml, raw = compute_ml_features_v2(bulk[did], lat=d["centroid_lat"], lon=d["centroid_lon"], date_str=date_str)
+                if ml:
+                    district_weather[did] = {"district_id": did, "lat": d["centroid_lat"], "lon": d["centroid_lon"], "ml_features": ml, "raw_weather": raw}
 
         result = (district_weather, get_aggregate_features(district_weather))
         self._realtime_cache[date_str] = result

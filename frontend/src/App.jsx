@@ -25,7 +25,7 @@ export default function App() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const { fire } = useNotification();
-  const [selectedDate, setSelectedDate] = useState('2026-09-10');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [leadTime, setLeadTime] = useState('24');
   const [activeView, setActiveView] = useState('dashboard');
   const [selectedDistrict, setSelectedDistrict] = useState(null);

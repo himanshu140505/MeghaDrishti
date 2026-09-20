@@ -1,9 +1,7 @@
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-
-const indiaCenter = [20.5937, 78.9629];
-const indiaBounds = [[6.5, 68.0], [37.0, 97.5]];
+import { indiaCenter, indiaBounds } from '../../utils/constants';
 
 function FitBounds({ districts }) {
   const map = useMap();
@@ -61,6 +59,7 @@ export default function RainfallMap({ districts = [], onDistrictClick }) {
           />
           <FitBounds districts={districts} />
           {districts.map((d, i) => {
+            if (d.lat == null || d.lon == null) return null;
             const corrected = d.corrected || 0;
             const pHeavy = d.p_heavy || d.pHeavy || 0;
             return (

@@ -29,26 +29,19 @@ export default function SummaryStats({ districts = [] }) {
   const avgHeavy = districts.reduce((s, d) => s + (d.p_heavy ?? d.pHeavy ?? 0), 0) / n;
   const avgModerate = districts.reduce((s, d) => s + (d.p_moderate ?? d.pModerate ?? 0), 0) / n;
 
-  const rmseRaw = Math.sqrt(districts.reduce((s, d) => s + Math.pow(d.raw || 0, 2), 0) / n);
-  const rmseCorrected = Math.sqrt(districts.reduce((s, d) => s + Math.pow(d.corrected || 0, 2), 0) / n);
-  const rmseImprovement = rmseRaw > 0 ? ((rmseRaw - rmseCorrected) / rmseRaw * 100) : 0;
-
-  const closerCount = districts.filter(d => {
-    const rawDist = Math.abs(d.raw || 0);
-    const corrDist = Math.abs(d.corrected || 0);
-    return corrDist <= rawDist;
-  }).length;
-  const regimeAccuracy = (closerCount / n * 100);
+  const improvement = avgRaw > 0 ? ((avgCorrected - avgRaw) / avgRaw * 100) : 0;
 
   const heavyPct = avgHeavy * 100;
   const moderatePct = avgModerate * 100;
 
+  const states = [...new Set(districts.map(d => d.state).filter(Boolean))];
+
   const stats = [
-    { label: 'Regime accuracy', value: `${regimeAccuracy.toFixed(1)}%`, sub: `${closerCount}/${n} districts closer to observed`, icon: Activity, iconBg: 'bg-orange-500/20', iconColor: 'text-orange-400', valueColor: 'text-orange-400' },
-    { label: 'RMSE improvement', value: `${rmseRaw.toFixed(1)} > ${rmseCorrected.toFixed(1)}mm`, sub: `${rmseImprovement.toFixed(1)}% improvement (raw vs corrected)`, icon: TrendingUp, iconBg: 'bg-cyan-500/20', iconColor: 'text-cyan-400', valueColor: 'text-cyan-400' },
-    { label: 'Heavy rain probability', value: `${heavyPct.toFixed(1)}%`, sub: `avg pHeavy across ${n} districts`, icon: CloudRain, iconBg: 'bg-teal-500/20', iconColor: 'text-teal-400', valueColor: 'text-teal-400' },
-    { label: 'Moderate rain probability', value: `${moderatePct.toFixed(1)}%`, sub: `avg pModerate across ${n} districts`, icon: Sparkles, iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-400', valueColor: 'text-emerald-400' },
-    { label: 'Districts count', value: `${n}`, sub: `avg raw ${avgRaw.toFixed(1)}mm, corrected ${avgCorrected.toFixed(1)}mm`, icon: AlertTriangle, iconBg: 'bg-red-500/20', iconColor: 'text-red-400', valueColor: 'text-red-400' },
+    { label: 'Avg Raw NWP Rainfall', value: `${avgRaw.toFixed(1)}mm`, sub: `Mean across ${n} districts`, icon: Activity, iconBg: 'bg-orange-500/20', iconColor: 'text-orange-400', valueColor: 'text-orange-400' },
+    { label: 'Avg AI Corrected Rainfall', value: `${avgCorrected.toFixed(1)}mm`, sub: `${improvement >= 0 ? '+' : ''}${improvement.toFixed(1)}% vs raw`, icon: TrendingUp, iconBg: 'bg-cyan-500/20', iconColor: 'text-cyan-400', valueColor: 'text-cyan-400' },
+    { label: 'Avg Heavy Rain P(>64.5mm)', value: `${heavyPct.toFixed(1)}%`, sub: `avg pHeavy across ${n} districts`, icon: CloudRain, iconBg: 'bg-teal-500/20', iconColor: 'text-teal-400', valueColor: 'text-teal-400' },
+    { label: 'Avg Moderate Rain P(>7.5mm)', value: `${moderatePct.toFixed(1)}%`, sub: `avg pModerate across ${n} districts`, icon: Sparkles, iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-400', valueColor: 'text-emerald-400' },
+    { label: 'Districts Analyzed', value: `${n}`, sub: `${states.length} unique state${states.length !== 1 ? 's' : ''}`, icon: AlertTriangle, iconBg: 'bg-red-500/20', iconColor: 'text-red-400', valueColor: 'text-red-400' },
   ];
 
   return (

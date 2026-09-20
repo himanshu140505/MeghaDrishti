@@ -1,9 +1,7 @@
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-
-const indiaCenter = [20.5937, 78.9629];
-const indiaBounds = [[6.5, 68.0], [37.0, 97.5]];
+import { indiaCenter, indiaBounds } from '../../utils/constants';
 
 function FitBounds({ districts }) {
   const map = useMap();
@@ -32,7 +30,7 @@ const probabilityColorScale = (value) => {
   return '#ef4444';
 };
 
-export default function ProbabilityMap({ districts = [] }) {
+export default function ProbabilityMap({ districts = [], onDistrictClick }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -60,6 +58,7 @@ export default function ProbabilityMap({ districts = [] }) {
           />
           <FitBounds districts={districts} />
           {districts.map((d, i) => {
+            if (d.lat == null || d.lon == null) return null;
             const pHeavy = d.p_heavy || d.pHeavy || 0;
             return (
               <CircleMarker
@@ -70,6 +69,7 @@ export default function ProbabilityMap({ districts = [] }) {
                 color={pHeavy > 0.5 ? '#ef4444' : isDark ? '#475569' : '#94a3b8'}
                 weight={pHeavy > 0.5 ? 2 : 1}
                 fillOpacity={0.85}
+                eventHandlers={{ click: () => onDistrictClick?.(d) }}
               >
                 <Popup>
                   <div className="min-w-[160px]">

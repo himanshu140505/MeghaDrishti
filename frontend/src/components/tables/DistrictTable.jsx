@@ -78,7 +78,7 @@ export default function DistrictTable({ districts = [], onDistrictClick, hovered
               const dot = regimeDot[d.regime] || 'bg-slate-400';
               const pHeavy = d.p_heavy || d.pHeavy || 0;
               const pModerate = d.p_moderate || d.pModerate || 0;
-              const wetProb = d.wet || 0;
+              const wetProb = d.p_wet || d.pWet || d.wet || 0;
               const isHovered = hoveredDistrict === (d.district_id || d.id);
               return (
                 <tr

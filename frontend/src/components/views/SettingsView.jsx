@@ -1,10 +1,17 @@
+import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { Sun, Moon, Server, Cpu, Database } from 'lucide-react';
 import { MODEL_CARDS } from '../../data/mockData';
+import { fetchHealth } from '../../services/api';
 
 export default function SettingsView() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
+  const [apiStatus, setApiStatus] = useState('checking');
+
+  useEffect(() => {
+    fetchHealth().then(() => setApiStatus('connected')).catch(() => setApiStatus('error'));
+  }, []);
 
   return (
     <div className="max-w-[800px] mx-auto space-y-5">
@@ -35,7 +42,11 @@ export default function SettingsView() {
                 <div className={`text-[12px] ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/v1'}</div>
               </div>
             </div>
-            <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[11px] font-semibold">Connected</span>
+            <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${
+              apiStatus === 'connected' ? 'bg-emerald-500/15 text-emerald-400' : apiStatus === 'error' ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'
+            }`}>
+              {apiStatus === 'connected' ? 'Connected' : apiStatus === 'error' ? 'Disconnected' : 'Checking...'}
+            </span>
           </div>
 
           <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>

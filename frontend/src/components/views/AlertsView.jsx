@@ -6,9 +6,11 @@ import { useTheme } from '../../context/ThemeContext';
 const SEV_ORDER = ['red', 'orange', 'yellow'];
 
 function classify(d, trigger) {
-  if (d.pHeavy >= trigger + 0.10) return 'red';
-  if (d.pHeavy >= trigger) return 'orange';
-  if (d.pModerate >= 0.60) return 'yellow';
+  const pHeavy = d.pHeavy || d.p_heavy || 0;
+  const pModerate = d.pModerate || d.p_moderate || 0;
+  if (pHeavy >= trigger + 0.10) return 'red';
+  if (pHeavy >= trigger) return 'orange';
+  if (pModerate >= 0.60) return 'yellow';
   return null;
 }
 

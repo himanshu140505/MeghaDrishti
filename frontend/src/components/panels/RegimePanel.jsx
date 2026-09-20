@@ -4,9 +4,9 @@ import { useTheme } from '../../context/ThemeContext';
 export default function RegimePanel({ regime }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const regimeType = regime?.type || 'active_monsoon';
-  const regimeInfo = REGIMES[regimeType] || REGIMES.active_monsoon;
-  const confidence = regime?.confidence || 0.85;
+  const regimeType = regime?.type || null;
+  const regimeInfo = regimeType ? (REGIMES[regimeType] || REGIMES.active_monsoon) : { label: 'Awaiting Data', IconComponent: null };
+  const confidence = regime?.confidence ?? null;
   const IconComp = regimeInfo.IconComponent;
 
   const maxCount = Math.max(...REGIME_DISTRIBUTION.map(r => r.count));
@@ -27,7 +27,7 @@ export default function RegimePanel({ regime }) {
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-[22px] font-extrabold tracking-[-0.02em]">{regimeInfo.label}</h2>
               <span className="px-3 py-1 rounded-full bg-white/15 text-[12px] font-bold backdrop-blur-sm border border-white/10">
-                Confidence: {(confidence * 100).toFixed(0)}%
+                Confidence: {confidence !== null ? `${(confidence * 100).toFixed(0)}%` : '--'}
               </span>
             </div>
             <p className="text-[13px] text-cyan-100/60 leading-relaxed max-w-md">
