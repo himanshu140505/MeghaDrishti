@@ -546,8 +546,11 @@ class RealDataLoader:
 
         from ml.weather_api import fetch_open_meteo_bulk, compute_ml_features_v2, get_aggregate_features
 
-        _test_ids = {265, 159, 161, 42, 235, 299, 153, 10, 380, 500,
-                     191, 310, 75, 412, 540, 620, 130, 250, 350, 480}
+        _test_ids = {
+            265, 159, 161, 42, 235, 299, 153, 10, 380, 500,
+            191, 310, 75, 412, 540, 620, 130, 250, 350, 480,
+            399, 564, 769, 612, 338, 702, 538, 328, 748, 281,
+        }
         nwd = [d for d in districts if d["district_id"] in _test_ids]
         bulk = fetch_open_meteo_bulk(nwd, date_str)
 
